@@ -1,0 +1,203 @@
+{
+  "info": {
+    "name": "Mini ERP - Inventory & Purchase Orders",
+    "description": "Sanctum-protected API for the Mini ERP module. Run **Login** first: its test script stores the bearer token in the `token` collection variable. **Create PO** stores the new order id in `purchase_order_id`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "purchase_order_id", "value": "1", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "if (body.data && body.data.token) {",
+              "    pm.collectionVariables.set('token', body.data.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"password\",\n    \"device_name\": \"postman\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "login"]
+        }
+      }
+    },
+    {
+      "name": "Inventory",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/inventory?per_page=20&page=1",
+          "host": ["{{base_url}}"],
+          "path": ["api", "inventory"],
+          "query": [
+            { "key": "per_page", "value": "20" },
+            { "key": "page", "value": "1" },
+            { "key": "search", "value": "ELEC", "disabled": true },
+            { "key": "low_stock", "value": "1", "disabled": true }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Low Stock",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/inventory/low-stock",
+          "host": ["{{base_url}}"],
+          "path": ["api", "inventory", "low-stock"]
+        }
+      }
+    },
+    {
+      "name": "Create PO",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+              "const body = pm.response.json();",
+              "if (body.data && body.data.id) {",
+              "    pm.collectionVariables.set('purchase_order_id', String(body.data.id));",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"supplier_id\": 1,\n    \"items\": [\n        {\n            \"product_id\": 1,\n            \"quantity\": 5,\n            \"unit_price\": \"25.50\"\n        },\n        {\n            \"product_id\": 2,\n            \"quantity\": 10,\n            \"unit_price\": \"15.00\"\n        }\n    ]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/purchase-orders",
+          "host": ["{{base_url}}"],
+          "path": ["api", "purchase-orders"]
+        }
+      }
+    },
+    {
+      "name": "Get PO",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/purchase-orders/{{purchase_order_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "purchase-orders", "{{purchase_order_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Approve PO",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n    \"status\": \"APPROVED\"\n}" },
+        "url": {
+          "raw": "{{base_url}}/api/purchase-orders/{{purchase_order_id}}/status",
+          "host": ["{{base_url}}"],
+          "path": ["api", "purchase-orders", "{{purchase_order_id}}", "status"]
+        }
+      }
+    },
+    {
+      "name": "Receive PO",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n    \"status\": \"RECEIVED\"\n}" },
+        "url": {
+          "raw": "{{base_url}}/api/purchase-orders/{{purchase_order_id}}/status",
+          "host": ["{{base_url}}"],
+          "path": ["api", "purchase-orders", "{{purchase_order_id}}", "status"]
+        }
+      }
+    },
+    {
+      "name": "Cancel PO",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n    \"status\": \"CANCELLED\"\n}" },
+        "url": {
+          "raw": "{{base_url}}/api/purchase-orders/{{purchase_order_id}}/status",
+          "host": ["{{base_url}}"],
+          "path": ["api", "purchase-orders", "{{purchase_order_id}}", "status"]
+        }
+      }
+    },
+    {
+      "name": "Supplier Spend",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/reports/supplier-spend",
+          "host": ["{{base_url}}"],
+          "path": ["api", "reports", "supplier-spend"]
+        }
+      }
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/logout",
+          "host": ["{{base_url}}"],
+          "path": ["api", "logout"]
+        }
+      }
+    }
+  ]
+}
